@@ -24,7 +24,7 @@ export default function HomeScreen() {
         <TouchableOpacity style={styles.miBoton1} onPress={() => router.push("/PantallaUsuario")}>
           <Text style={styles.miTextoBoton}>Entrar</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.miBoton2} onPress={() => router.push("/PantallaPrimera")}>
+        <TouchableOpacity style={styles.miBoton2} onPress={() => router.push("/PantallaHome")}>
           <Text style={styles.miTextoBoton}>Volver</Text>
         </TouchableOpacity>
         <View style={styles.iconos}>

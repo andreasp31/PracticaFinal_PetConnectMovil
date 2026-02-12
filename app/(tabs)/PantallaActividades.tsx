@@ -14,9 +14,6 @@ interface Actividad {
 const actividades =[
     { _id: '1', nombre: 'Paseo por el parque',descripcion: 'Un paseo relajante para tu mascota.',plazas:10,horarios:['09:00','11:00','13:00','17:00','19:00']},
     { _id: '2', nombre: 'Guardería Canina', descripcion: 'Cuidamos a tu perro todo el día.',plazas:15,horarios:['09:00','11:00','13:00','17:00','19:00']},
-    { _id: '3', nombre: 'Entrenamiento', descripcion: 'Mejora el comportamiento de tu peludo.',plazas:10,horarios:['09:00','11:00','13:00','17:00','19:00']},     
-    { _id: '4', nombre: 'Entrenamiento', descripcion: 'Mejora el comportamiento de tu peludo.',plazas:10,horarios:['09:00','11:00','13:00','17:00','19:00']},
-    { _id: '5', nombre: 'Paseo por el parque',descripcion: 'Un paseo relajante para tu mascota.',plazas:10,horarios:['09:00','11:00','13:00','17:00','19:00']}
 ]
 
 export default function HomeScreen() {
@@ -47,8 +44,8 @@ export default function HomeScreen() {
       <View style={styles.tarjetaInfo}>
         <View style={styles.tarjetaCabecera}>
           <Text style={styles.tarjetaTitulo}>{item.nombre}</Text>
-          <TouchableOpacity style={styles.botonTarjeta} onPress={() => abrirModal(item)}>
-            <Text style={styles.miTextoBoton2}>Ver más</Text>
+          <TouchableOpacity onPress={() => abrirModal(item)}>
+            <Image source={require('@/assets/images/Edit.png')} contentFit="cover" style={styles.fotoEditar}></Image>
           </TouchableOpacity>
         </View>
         <Text style={styles.tarjetaDescripcion}>{item.descripcion}</Text>
@@ -71,11 +68,11 @@ export default function HomeScreen() {
       </ImageBackground>
       <View style={styles.cajaScroll}>
         <ScrollView horizontal={true} contentContainerStyle={styles.container2}>
-          <TouchableOpacity style={styles.botonMenu} onPress={() => router.push("/PantallaUsuario")}>
-            <Text style={styles.miTextoBoton3}>Nuevas Actividades</Text>
+          <TouchableOpacity style={styles.miBoton1} onPress={() => router.push("/PantallaUsuario")}>
+            <Text style={styles.miTextoBoton}>Nuevas Actividades</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.miBoton1} onPress={() => router.push("/PantallaActividades")}>
-            <Text style={styles.miTextoBoton}>Mis Actividades</Text>
+          <TouchableOpacity style={styles.botonMenu} onPress={() => router.push("/PantallaRegistro")}>
+            <Text style={styles.miTextoBoton3}>Mis Actividades</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.miBoton1} onPress={() => abrirModal2()}>
             <Text style={styles.miTextoBoton}>Adoptar</Text>
@@ -193,6 +190,12 @@ const styles = StyleSheet.create({
   fotoCerrar:{
     height:30,
     width:30,
+    margin:10,
+    resizeMode: "contain"
+  },
+  fotoEditar:{
+    height:25,
+    width:25,
     margin:10,
     resizeMode: "contain"
   },
