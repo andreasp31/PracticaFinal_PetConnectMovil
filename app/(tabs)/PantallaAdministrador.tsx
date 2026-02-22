@@ -1,9 +1,10 @@
 import { Image, ImageBackground } from 'expo-image';
-import {StyleSheet, View, TouchableOpacity, Text, ScrollView, FlatList, Modal, TouchableWithoutFeedback} from 'react-native';
+import {StyleSheet, View, TouchableOpacity, Text, ScrollView, FlatList, Modal, TouchableWithoutFeedback, TextInput} from 'react-native';
 import { useRouter, Stack, useFocusEffect} from 'expo-router';
 import { useState, useEffect,useCallback } from 'react';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 interface Persona {
   usuarioEmail: string;
@@ -34,6 +35,14 @@ export default function HomeScreen() {
   const [emailUsuario, setEmailUsuario] = useState<string | null>(null);
   const [modalConfirmar, setModalConfirmar] = useState(false);
   const [actividadCancelar, setActividadCancelar] = useState<Actividad | null>(null);
+  const [nombreActividad, setNombreActividad] = useState('');
+  const [descripcion, setDescripcion] = useState('');
+  const [fecha, setFecha] = useState('');
+  const [plazas, setPlazas] = useState('');
+  const [modoEdicion, setmodoEdicion] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
+  const [fechaObjeto, setFechaObjeto] = useState(new Date());
+  const [modalAsistencia, setModalAsistencia] = useState(false);
   const horarios = ["09:00","11:00","13:00","17:00","19:00"];
   const abrirModal = (item: Actividad)=>{
     setActividadSeleccionada(item);
@@ -62,15 +71,23 @@ export default function HomeScreen() {
   const cerrarModal4 = () => {
     setModalVisible4(false); 
   };
-  const abrirConfirmar = () => {
-    if (actividadSeleccionada) {
-      setActividadCancelar(actividadSeleccionada);
-      setModalConfirmar(true);
-    } 
-    else {
-      console.log("Error: No hay actividad seleccionada");
-    }
+  const abrirModalCrear = () => {
+    setmodoEdicion(false);
+    setNombreActividad('');
+    setDescripcion('');
+    setFecha('');
+    setPlazas('');
+    setModalVisible(true);
   };
+  const abrirModalEditar = (actividad: Actividad) => {
+    setmodoEdicion(true); 
+    setActividadSeleccionada(actividad);
+    setNombreActividad(actividad.nombre);
+    setDescripcion(actividad.descripcion);
+    setPlazas(actividad.plazas.toString());
+    setFecha(formatearFecha(actividad.fechaHora));
+    setModalVisible(true);
+};
   const cerrarConfirmar = () => {
     setModalConfirmar(false);
     setActividadCancelar(null);
@@ -151,8 +168,53 @@ export default function HomeScreen() {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
-  });
-}
+    });
+  }
+  const abrirAsistencia = (actividad: Actividad) => {
+    setActividadSeleccionada(actividad);
+    setModalAsistencia(true);
+  };
+  const cerrarAsistencia = () => {
+    setModalAsistencia(false);
+  };
+  const guardarActividad = async () => {
+  try {
+    const datos = {
+      nombre: nombreActividad,
+      descripcion: descripcion,
+      fechaHora: fecha,
+      plazas: parseInt(plazas),
+    };
+
+    if (modoEdicion && actividadSeleccionada) {
+      await axios.put(`http://10.0.2.2:3000/api/actividades/actualizar/${actividadSeleccionada._id}`, datos);
+    } 
+    else {
+      await axios.post("http://10.0.2.2:3000/api/actividades/crear", datos);
+    }
+
+    cerrarModal();
+    await cargarActividades();
+  } 
+  catch (error) {
+    console.error("Error al guardar actividad:", error);
+  }
+};
+  const eliminarActividad = async () => {
+    if (!actividadSeleccionada) return;
+    try {
+      await axios.delete(`http://10.0.2.2:3000/api/actividades/eliminar/${actividadSeleccionada._id}`);
+      setModalConfirmar(false);
+      setModalVisible(false);
+      await cargarActividades();
+    } catch (error) {
+      console.error("Error al eliminar:", error);
+    }
+  };
+  const obtenerPersonasPorHora = (hora: string) => {
+    if (!actividadSeleccionada || !actividadSeleccionada.personasApuntadas) return [];
+    return actividadSeleccionada.personasApuntadas.filter(p => p.hora === hora);
+  };
   //lo que se va a mostrar en pantalla: uso botones, imágenes y text
   const tarjeta = ({ item }:{item : Actividad}) => {
     const horaReserva = cargarHora(item);
@@ -161,12 +223,18 @@ export default function HomeScreen() {
         <View style={styles.tarjetaInfo}>
           <View style={styles.tarjetaCabecera}>
             <Text style={styles.tarjetaTitulo}>{item.nombre}</Text>
-            <TouchableOpacity onPress={() => abrirModal3()}>
-              <Image source={require('@/assets/images/Edit.png')} contentFit="cover" style={styles.fotoEditar}></Image>
-            </TouchableOpacity>
+            <View>
+              <TouchableOpacity onPress={() => abrirModalEditar(item)}>
+                <Image source={require('@/assets/images/Edit.png')} contentFit="cover" style={styles.fotoEditar}></Image>
+              </TouchableOpacity>
+            </View>
+            
           </View>
           <Text style={styles.tarjetaDescripcion}>{item.descripcion}</Text>
           <Text style={styles.tarjetaDescripcion}>{formatearFecha(item.fechaHora)}</Text>
+          <TouchableOpacity onPress={() => abrirAsistencia(item)}>
+            <Image source={require('@/assets/images/asistencia.png')} contentFit="cover" style={styles.fotoAsistencia}></Image>
+          </TouchableOpacity>
         </View>
       </View>
     ) 
@@ -190,7 +258,7 @@ export default function HomeScreen() {
           <TouchableOpacity style={styles.botonMenu}>
             <Text style={styles.miTextoBoton3}>Actividades</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.miBoton1} onPress={() => abrirModal3()}>
+          <TouchableOpacity style={styles.miBoton1} onPress={abrirModalCrear}>
             <Text style={styles.miTextoBoton}>Nueva Actividad</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.miBoton1} onPress={() => abrirModal2()}>
@@ -201,23 +269,6 @@ export default function HomeScreen() {
       <View style={styles.cajaScroll2}>
         <FlatList data={actividades} renderItem={tarjeta} keyExtractor={item => item._id} horizontal={false} showsVerticalScrollIndicator={true} style={styles.cajaScroll2} extraData={actividades}></FlatList>
       </View>
-      <Modal transparent={true} visible={modalVisible} onRequestClose={cerrarModal3}>
-        <View style={styles.fondoModal}>
-          <View style={styles.modal2}>
-            <View style={styles.modal2Cabecera}>
-              <TouchableOpacity onPress={cerrarModal3}>
-                <Image source={require('@/assets/images/botonCerrar.png')} contentFit="cover" style={styles.fotoCerrar}></Image>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.bloqueModal3}>
-              <input></input>
-              <TouchableOpacity style={styles.botonMenu2} onPress={actualizarHora}>
-                <Text style={styles.miTextoBoton3}>Guardar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
       <Modal transparent={true} visible={modalVisible2} onRequestClose={cerrarModal2}>
         <View style={styles.fondoModal}>
           <View style={styles.modal}>
@@ -238,13 +289,13 @@ export default function HomeScreen() {
         <View style={styles.fondoModal2}>
           <View style={styles.modalConfirmar}>
             <Text style={styles.tarjetaTitulo2}>¿Estás seguro?</Text>
-            <Text style={styles.texto6}>Vas a cancelar tu reserva para esta actividad. Esta acción no se puede deshacer.</Text>
+            <Text style={styles.texto6}>Vas a eliminar tu reserva para esta actividad. Esta acción no se puede deshacer.</Text>
             <View style={styles.bloqueBotones}>
               <TouchableOpacity style={styles.miBoton1} onPress={cerrarConfirmar}>
                 <Text style={styles.miTextoBoton}>Volver</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.botonCancelar2} onPress={cancelarReserva}>
-                <Text style={styles.textoBotonCancelar}>Sí, cancelar</Text>
+              <TouchableOpacity style={styles.botonCancelar2} onPress={eliminarActividad}>
+                <Text style={styles.textoBotonCancelar}>Sí, eliminar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -264,6 +315,94 @@ export default function HomeScreen() {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+      <Modal transparent={true} visible={modalVisible} onRequestClose={cerrarModal}>
+        <View style={styles.fondoModal}>
+          <View style={styles.modal5}>
+            <View style={styles.modal5cabecerta}>
+              <TouchableOpacity onPress={cerrarModal}>
+                <Image source={require('@/assets/images/botonCerrar.png')} contentFit="cover" style={styles.fotoCerrar}></Image>
+              </TouchableOpacity>
+              {modoEdicion && (
+                <TouchableOpacity onPress={cerrarModal}>
+                  <Image source={require('@/assets/images/botonCerrar.png')} contentFit="cover" style={styles.fotoCerrar2}></Image>
+                </TouchableOpacity>
+              )}
+              {modoEdicion && (
+                  <TouchableOpacity style={styles.botonCancelar} onPress={() => setModalConfirmar(true)}>
+                    <Text style={styles.textoBotonCancelar}>Eliminar Evento</Text>
+                  </TouchableOpacity>
+              )}
+            </View>
+            <View style={styles.modalContenido}>
+              <Text style={styles.tituloModal}>{modoEdicion ? "Editar Actividad" : "Nueva Actividad"}</Text>
+              <TextInput style={styles.input} placeholder="Nombre" value={nombreActividad} onChangeText={setNombreActividad} />
+              <TextInput style={styles.input} placeholder="Descripción" value={descripcion} onChangeText={setDescripcion} multiline />
+              <TouchableOpacity style={styles.input} onPress={() => setShowPicker(true)}>
+                <Text style={styles.miTextoBoton4}>{fecha ? `Fecha: ${fecha}` : "Seleccionar Fecha"}</Text>
+              </TouchableOpacity>
+              {showPicker && (
+                <DateTimePicker value={fechaObjeto} mode="date" display="default" onChange={(evento, seleccionDate) => {
+                    setShowPicker(false);
+                    if (seleccionDate) {
+                      setFechaObjeto(seleccionDate);
+                      // Formatear fecha 
+                      const fechaFormateada = seleccionDate.toISOString().split('T')[0];
+                      setFecha(fechaFormateada);
+                    }
+                  }}
+                />
+              )}
+              <TextInput style={styles.input} placeholder="Plazas" keyboardType="numeric" value={plazas} onChangeText={setPlazas} />
+              <View style={styles.filaBotones}>
+                <TouchableOpacity style={styles.botonMenu2} onPress={guardarActividad}>
+                  <Text style={styles.miTextoBoton3}>{modoEdicion ? "Actualizar" : "Guardar"}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <Modal transparent={true} visible={modalAsistencia} onRequestClose={cerrarAsistencia}>
+        <View style={styles.fondoModal}>
+          <View style={styles.modal5}>
+            {/* Cabecera con botón cerrar */}
+            <View style={styles.modal5cabecerta}>
+              <TouchableOpacity onPress={cerrarAsistencia}>
+                <Image source={require('@/assets/images/botonCerrar.png')} style={styles.fotoCerrar} />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.tituloModal}>{actividadSeleccionada?.nombre}</Text>
+            <Text style={styles.texto6}>Personas inscritas:</Text>
+            <ScrollView style={{ width: '100%', marginTop: 10 }}>
+              {horarios.map((hora) => {
+                const inscritos = obtenerPersonasPorHora(hora);
+                return (
+                  <View key={hora} style={styles.bloqueHora}>
+                    <View style={styles.cabeceraHora}>
+                      <Text style={styles.textoBotonCancelar}>{hora}h</Text>
+                      <Text style={styles.textoBotonCancelar}>({inscritos.length} personas)</Text>
+                    </View>
+                    <ScrollView style={styles.listaInscritos} nestedScrollEnabled={true}>
+                      {inscritos.length > 0 ? (
+                        inscritos.map((persona, index) => (
+                          <View key={index} style={styles.filaPersona}>
+                            <Text style={styles.texto6}>{persona.usuarioEmail}</Text>
+                            <Text style={persona.estado === 'cancelado_tarde' ? styles.texto6 : styles.texto6}>
+                              {persona.estado === 'cancelado_tarde' ? 'Canceló tarde' : 'Confirmado'}
+                            </Text>
+                          </View>
+                        ))
+                      ) : (
+                        <Text style={styles.texto6}>No hay inscritos</Text>
+                      )}
+                    </ScrollView>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>  
   );
 }
@@ -275,6 +414,69 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     backgroundColor: "white",
+  },
+  bloqueHora:{
+    maxHeight:100
+  },
+  cabeceraHora:{
+    backgroundColor:"#110501",
+    display:"flex",
+    flexDirection:"row",
+    gap:100,
+    alignItems:"center",
+    justifyContent:"center",
+    padding:4,
+    borderRadius:10
+
+  },
+  listaInscritos:{
+    display:"flex",
+    flexDirection:"column",
+    maxHeight:100,
+  },
+  filaPersona:{
+    display:"flex",
+    flexDirection:"row",
+    alignItems:"center",
+    justifyContent:"center",
+    gap:10,
+  },
+  modal5cabecerta:{
+    display:"flex",
+    flexDirection:"row",
+    gap:70,
+    alignItems:"center"
+  },
+  modalContenido:{
+    display:"flex",
+    flexDirection:"column",
+    gap:12,
+    padding:2
+  },
+  tituloModal:{
+    alignSelf:"center",
+    fontSize:22,
+    marginTop:35,
+    marginBottom:10
+  },
+  input:{
+    borderColor:"#110501",
+    borderWidth:1,
+    borderRadius:20,
+    padding:10,
+    minWidth:300
+  },
+  filaBotones:{
+    alignItems:"center"
+  },
+  modal5:{
+    backgroundColor:"#ffffff",
+    width:340,
+    minHeight:450,
+    borderRadius:25,
+    padding:20,
+    alignItems:"center",
+    textAlign:"center",
   },
   modalConfirmar:{
     backgroundColor:"#ffffff",
@@ -301,7 +503,8 @@ const styles = StyleSheet.create({
     gap:20
   },
   texto6:{
-    textAlign:"center"
+    textAlign:"center",
+    margin:10
   },
   bloqueBotones:{
     display:"flex",
@@ -417,13 +620,28 @@ const styles = StyleSheet.create({
   fotoCerrar:{
     height:30,
     width:30,
-    resizeMode: "contain"
+    resizeMode: "contain",
+    marginLeft:-150
+  },
+  fotoCerrar2:{
+    height:30,
+    width:30,
+    resizeMode: "contain",
+    marginLeft:-70
   },
   fotoEditar:{
     height:25,
     width:25,
-    margin:10,
+    margin:15,
     resizeMode: "contain"
+  },
+  fotoAsistencia:{
+    height:25,
+    width:25,
+    margin:10,
+    resizeMode: "contain",
+    alignSelf:"flex-end",
+    marginTop:-20
   },
   modal:{
     backgroundColor:"#ffffff",
@@ -617,6 +835,9 @@ const styles = StyleSheet.create({
   },
   miTextoBoton:{
     color:"#110501",
+  },
+  miTextoBoton4:{
+    color:"#6e6c6cff",
   },
   miTextoBoton3:{
     color:"#ffffffff",

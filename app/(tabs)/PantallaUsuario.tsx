@@ -106,7 +106,7 @@ export default function HomeScreen() {
           <View style={styles.tarjetaCabecera}>
             <Text style={styles.tarjetaTitulo}>{item.nombre}</Text>
             <TouchableOpacity style={[styles.botonTarjeta, deshabilitado && styles.botonDesactivado]} onPress={() => abrirModal(item)}>
-              <Text style={[styles.miTextoBoton2, deshabilitado && styles.textoBotonDesactivado]}>{apuntado ? "Inscrito" : sinPlazas ? "Agotado" : "Ver más"}</Text>
+              <Text style={[styles.miTextoBoton2, deshabilitado && styles.textoBotonDesactivado]}>{apuntado ? "Inscrito" : perdido ? "Plaza Perdida" : sinPlazas ? "Agotado" : "Ver más"}</Text>
             </TouchableOpacity>
           </View>
           <Text style={styles.tarjetaDescripcion}>{item.descripcion}</Text>

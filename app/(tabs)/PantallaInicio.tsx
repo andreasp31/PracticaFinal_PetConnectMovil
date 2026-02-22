@@ -84,8 +84,10 @@ export default function HomeScreen() {
           <Image source={require('@/assets/images/Instagram.svg')} style={styles.icono} resizeMode="contain"></Image>
           <Image source={require('@/assets/images/tiktok.svg')} style={styles.icono2} resizeMode="contain"></Image>
         </View>
+        <View style={styles.foto3}>
+          <Image source={require('@/assets/images/fondoPolaroid2.svg')} style={styles.foto2}></Image>
+        </View>
       </View>
-      <Image source={require('@/assets/images/fondoPolaroid2.png')} style={styles.foto2}></Image>
     </View>  
   );
 }
@@ -120,11 +122,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap:10,
     marginTop:-60,
+    zIndex: 2
   },
   container3: {
     alignItems: 'center',
     gap:10,
     marginTop:30,
+    zIndex: 3
   },
   iconos:{
     display:"flex",
@@ -183,10 +187,20 @@ const styles = StyleSheet.create({
     width: 220,
     resizeMode: "contain",
   },
+  foto3: {
+    marginTop:30,
+    height: 220,
+    width: 220,
+    resizeMode: "contain",
+    alignItems:"center"
+  },
   foto2: {
-    marginTop: -180,
-    height: 260,
-    width: 400,
-    resizeMode: "contain"
+    position: 'absolute',
+    bottom: 0,     
+    height: 240,
+    width: 350,
+    resizeMode: "contain",
+    zIndex:-1,
+    pointerEvents:"none"
   }
 });

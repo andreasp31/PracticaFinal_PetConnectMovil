@@ -107,9 +107,10 @@ const styles = StyleSheet.create({
     resizeMode: "contain"
   },
   foto2: {
-    marginTop: -140,
+    position: 'absolute', 
+    bottom: 0,            
     height: 240,
     width: 350,
-    resizeMode: "contain"
+    resizeMode: "contain",
   }
 });
