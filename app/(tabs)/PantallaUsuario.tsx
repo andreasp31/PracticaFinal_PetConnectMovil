@@ -1,38 +1,51 @@
 import { Image, ImageBackground } from 'expo-image';
-import {StyleSheet, View, TouchableOpacity, Text, ScrollView, FlatList, Modal} from 'react-native';
-import { useRouter, Stack} from 'expo-router';
-import { useState } from 'react'
+import {StyleSheet, View, TouchableOpacity, Text, ScrollView, FlatList, Modal, TouchableWithoutFeedback} from 'react-native';
+import { useRouter, Stack, useFocusEffect} from 'expo-router';
+import { useState, useEffect, useCallback} from 'react';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+interface Persona {
+  usuarioEmail: string;
+  estado: 'inscrito' | 'cancelado_tarde';
+}
 
 interface Actividad {
   _id: string;
   nombre: string;
   descripcion: string;
   plazas: number;
-  horarios: string[]
+  horarios: string[];
+  fechaHora: string;
+  personasApuntadas?: Persona[];
 }
-
-const actividades =[
-    { _id: '1', nombre: 'Paseo por el parque',descripcion: 'Un paseo relajante para tu mascota.',plazas:10,horarios:['09:00','11:00','13:00','17:00','19:00']},
-    { _id: '2', nombre: 'Guardería Canina', descripcion: 'Cuidamos a tu perro todo el día.',plazas:15,horarios:['09:00','11:00','13:00','17:00','19:00']},
-    { _id: '3', nombre: 'Entrenamiento', descripcion: 'Mejora el comportamiento de tu peludo.',plazas:10,horarios:['09:00','11:00','13:00','17:00','19:00']},     
-    { _id: '4', nombre: 'Entrenamiento', descripcion: 'Mejora el comportamiento de tu peludo.',plazas:10,horarios:['09:00','11:00','13:00','17:00','19:00']},
-    { _id: '5', nombre: 'Paseo por el parque',descripcion: 'Un paseo relajante para tu mascota.',plazas:10,horarios:['09:00','11:00','13:00','17:00','19:00']}
-]
 
 export default function HomeScreen() {
   //Para cambiar entre pantallas
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
   const [modalVisible2, setModalVisible2] = useState(false);
+  const [modalVisible4, setModalVisible4] = useState(false);
   const [actividadSeleccionada, setActividadSeleccionada] = useState<Actividad | null>(null);
-  const [horaSeleccionada, serHoraSeleccionada] = useState<string | null>(null);
+  const [horaSeleccionada, setHoraSeleccionada] = useState<string | null>(null);
+  const [actividades, setActividades] = useState<Actividad[]>([]);
+  const [emailUsuario, setEmailUsuario] = useState<string | null>(null);
+  const [nombre, setNombre] = useState('Usuario');
+  const horarios = ["09:00","11:00","13:00","17:00","19:00"];
   const abrirModal = (item: Actividad)=>{
+    const apuntado = esPersonaApuntada(item);
+    const perdido = esPlazaPerdida(item);
+    const sinPlazas = item.plazas <= 0;
     setActividadSeleccionada(item);
+    if (apuntado || perdido || sinPlazas) {
+      console.log("Usuario ya inscrito o sin plazas");
+      return; 
+    }
     setModalVisible(true);
   }
   const cerrarModal = () => {
     setModalVisible(false); 
-    serHoraSeleccionada(null); 
+    setHoraSeleccionada(null); 
   };
   const abrirModal2 = ()=>{
     setActividadSeleccionada(null);
@@ -41,25 +54,113 @@ export default function HomeScreen() {
   const cerrarModal2 = () => {
     setModalVisible2(false); 
   };
+  const abrirModal4 = ()=>{
+    setModalVisible4(true);
+  }
+  const cerrarModal4 = () => {
+    setModalVisible4(false); 
+  };
+  const cargarActividades = async () => {
+      try {
+        const respuesta = await axios.get("http://10.0.2.2:3000/api/actividades");
+        setActividades(respuesta.data);
+      } catch (error) {
+        console.error("Error al traer actividades:", error);
+      }
+  };
+  useEffect(() => {
+  const inicializar = async () => {
+    // 1. Recuperamos datos primero
+    const nombreGuardado = await AsyncStorage.getItem("nombreUsuario");
+    const emailGuardado = await AsyncStorage.getItem("emailUsuario");
+    
+    if (nombreGuardado) setNombre(nombreGuardado);
+    
+    if (emailGuardado) {
+      setEmailUsuario(emailGuardado); 
+      
+      try {
+        const respuesta = await axios.get("http://10.0.2.2:3000/api/actividades");
+        setActividades(respuesta.data);
+      } catch (error) {
+        console.error("Error al traer actividades:", error);
+      }
+    }
+  };
+  inicializar();
+}, []);
+  useFocusEffect(
+    useCallback(() => {
+      cargarActividades(); 
+    }, [emailUsuario])
+  );
   //lo que se va a mostrar en pantalla: uso botones, imágenes y text
-  const tarjeta = ({ item }:{item : Actividad}) => (
-    <View style={styles.tarjeta}>
-      <View style={styles.tarjetaInfo}>
-        <View style={styles.tarjetaCabecera}>
-          <Text style={styles.tarjetaTitulo}>{item.nombre}</Text>
-          <TouchableOpacity style={styles.botonTarjeta} onPress={() => abrirModal(item)}>
-            <Text style={styles.miTextoBoton2}>Ver más</Text>
-          </TouchableOpacity>
+  const tarjeta = ({ item }:{item : Actividad}) => {
+    const apuntado = esPersonaApuntada(item);
+    const perdido = esPlazaPerdida(item);
+    const sinPlazas = item.plazas <= 0;
+    const deshabilitado = apuntado || perdido || sinPlazas;
+    return(
+      <View style={styles.tarjeta}>
+        <View style={styles.tarjetaInfo}>
+          <View style={styles.tarjetaCabecera}>
+            <Text style={styles.tarjetaTitulo}>{item.nombre}</Text>
+            <TouchableOpacity style={[styles.botonTarjeta, deshabilitado && styles.botonDesactivado]} onPress={() => abrirModal(item)}>
+              <Text style={[styles.miTextoBoton2, deshabilitado && styles.textoBotonDesactivado]}>{apuntado ? "Inscrito" : sinPlazas ? "Agotado" : "Ver más"}</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.tarjetaDescripcion}>{item.descripcion}</Text>
+          <Text style={styles.tarjetaDescripcion}>{formatearFecha(item.fechaHora)}</Text>
         </View>
-        <Text style={styles.tarjetaDescripcion}>{item.descripcion}</Text>
       </View>
-    </View>
-);
+    )
+  }
+    
+  const inscripcion = async()=>{
+      if (!actividadSeleccionada || !horaSeleccionada) return;
+      try {
+        const emailUsuario = await AsyncStorage.getItem("emailUsuario");
+        console.log("Inscribiendo al usuario:", emailUsuario);
+        const datos = {
+          actividadId: actividadSeleccionada._id,
+          email: emailUsuario,
+          fechaHora: horaSeleccionada
+        };
+        await axios.post("http://10.0.2.2:3000/api/actividades/inscribir", datos);
+        const respuesta = await axios.get("http://10.0.2.2:3000/api/actividades");
+        setActividades([...respuesta.data]);
+        await cargarActividades();
+        cerrarModal();
+      } 
+      catch (error) {
+        console.error("Error al inscribirse:", error);
+        console.log("No se pudo completar la inscripción");
+      }
+  }
+  const esPersonaApuntada = (actividad: Actividad) => {
+    return actividad.personasApuntadas?.some(p => 
+      p.usuarioEmail === emailUsuario && p.estado === 'inscrito'
+    );
+  };
+
+  const esPlazaPerdida = (actividad: Actividad) => {
+    return actividad.personasApuntadas?.some(p => 
+      p.usuarioEmail === emailUsuario && p.estado === 'cancelado_tarde'
+    );
+  };
+  const formatearFecha = (fechaString: string) => {
+    const fecha = new Date(fechaString);
+    return fecha.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+  });
+}
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.textoCabecera}>
-          <Text style={styles.textosCuenta}>Nombre</Text>
+          <Text style={styles.textosCuenta} onPress={abrirModal4}>{nombre}</Text>
           <Image source={require('@/assets/images/logoPet.png')} style={styles.foto}></Image>
           <View style={styles.iconos}>
             <Image source={require('@/assets/images/facebook.svg')} style={styles.icono} resizeMode="contain"></Image>
@@ -83,7 +184,7 @@ export default function HomeScreen() {
         </ScrollView>
       </View>
       <View style={styles.cajaScroll2}>
-        <FlatList data={actividades} renderItem={tarjeta} keyExtractor={item => item._id} horizontal={false} showsVerticalScrollIndicator={true} style={styles.cajaScroll2}></FlatList>
+        <FlatList data={actividades} renderItem={tarjeta} keyExtractor={item => item._id} horizontal={false} showsVerticalScrollIndicator={true} style={styles.cajaScroll2} extraData={emailUsuario}></FlatList>
       </View>
       <Modal transparent={true} visible={modalVisible} onRequestClose={cerrarModal}>
         <View style={styles.fondoModal}>
@@ -98,16 +199,17 @@ export default function HomeScreen() {
             <View style={styles.bloqueModal}>
               <Text style={styles.tarjetaTitulo}>{actividadSeleccionada?.nombre}</Text>
               <Text>{actividadSeleccionada?.descripcion}</Text>
+              <Text>Fecha: {actividadSeleccionada ? formatearFecha(actividadSeleccionada.fechaHora) : ''}</Text>
               <Text>Plazas disponibles: {actividadSeleccionada?.plazas}</Text>
               <Text>Selecciona un horario:</Text>
               <View style={styles.contenedorHoras}>
-                {actividadSeleccionada?.horarios.map((hora)=>(
-                  <TouchableOpacity key={hora} style={[ styles.botonHora,horaSeleccionada === hora && styles.botonHoraActivo]} onPress={() => serHoraSeleccionada(hora)}>
+                {horarios.map((hora)=>(
+                  <TouchableOpacity key={hora} style={[ styles.botonHora,horaSeleccionada === hora && styles.botonHoraActivo]} onPress={() => setHoraSeleccionada(hora)}>
                     <Text style={[styles.textoHora,horaSeleccionada === hora && styles.textoHoraActivo]}>{hora}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
-              <TouchableOpacity style={styles.botonMenu2} onPress={() => router.push("/PantallaInicio")}>
+              <TouchableOpacity style={styles.botonMenu2} onPress={inscripcion}>
                 <Text style={styles.miTextoBoton3}>Inscribirse</Text>
               </TouchableOpacity>
             </View>
@@ -130,6 +232,20 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
+      <Modal transparent={true} visible={modalVisible4} onRequestClose={cerrarModal4}>
+        <TouchableWithoutFeedback onPress={cerrarModal4}>
+          <View style={styles.fondoModal02}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalConfirmar2}>
+                <Text style={styles.tarjetaTitulo2}>Mi cuenta</Text>
+                  <TouchableOpacity  style={styles.botonCancelar2} onPress={() => {cerrarModal4(); router.push("/PantallaInicio");}}>
+                    <Text style={styles.textoBotonCancelar}>Cerrar Sesión</Text>
+                  </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>  
   );
 }
@@ -141,6 +257,45 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     backgroundColor: "white",
+  },
+  fondoModal02:{
+    flex:1,
+    backgroundColor:"rgba(0, 0, 0, 0.32)",
+    justifyContent:"flex-start",
+    alignItems:"flex-start",
+    paddingTop:50,
+    paddingLeft:30
+  },
+  modalConfirmar2:{
+    backgroundColor:"#ffffff",
+    width:200,
+    minHeight:100,
+    borderRadius:25,
+    padding:20,
+    alignItems:"center",
+    textAlign:"center",
+    display:"flex",
+    flexDirection:"column",
+    gap:20
+  },
+  botonCancelar2:{
+    backgroundColor:"#460c0c",
+    height:45,
+    width:130,
+    alignItems:"center",
+    justifyContent:"center",
+    borderRadius:18
+  },
+  textoBotonCancelar:{
+    color:"#ffffff"
+  },
+  botonDesactivado:{
+    backgroundColor: '#ffffff',
+    borderColor: '#0f0f0f',
+    borderWidth: 1,
+  },
+  textoBotonDesactivado: {
+    color: '#0f0f0f',
   },
   fondoModal:{
     flex:1,

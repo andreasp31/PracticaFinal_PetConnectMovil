@@ -2,6 +2,8 @@ import { Image } from 'expo-image';
 import {StyleSheet, View, TouchableOpacity, Text, TextInput } from 'react-native';
 import { useRouter, Stack} from 'expo-router';
 import React, { useState } from 'react';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function HomeScreen() {
   const [email, ponerEmail] = useState('');
@@ -9,9 +11,45 @@ export default function HomeScreen() {
   const [confirmarClave, ponerConfirmarClave] = useState('');
   const [nombre, ponerNombre] = useState('');
   const [apellidos, ponerApellidos] = useState('');
+  const [errorMensaje, ponerMensaje] = useState('');
   //Para cambiar entre pantallas
   const router = useRouter();
   //lo que se va a mostrar en pantalla: uso botones, imágenes y text
+  const registrar = async()=>{
+      ponerMensaje('');
+      try{
+        const respuesta = await axios.post("http://10.0.2.2:3000/api/registro",{
+          nombre: nombre,
+          apellidos: apellidos,
+          email: email,
+          clave: clave,
+          clave2: confirmarClave
+        });
+        router.push('/PantallaInicio');
+
+      }
+      catch (error: any) {
+        let mensajeFinal = "Error al registrar";
+
+        if (error.response && error.response.data) {
+            const data = error.response.data;
+            // 1. Si usamos el nuevo formato .format() del backend:
+            if (data.detalles) {
+                // Buscamos el primer error que aparezca en el objeto formateado
+                // Zod .format() devuelve algo como { nombre: { _errors: [] } }
+                const primerCampoConError = Object.keys(data.detalles).find(key => key !== '_errors');
+                if (primerCampoConError) {
+                    mensajeFinal = data.detalles[primerCampoConError]._errors[0];
+                }
+            } 
+            // 2. Por si acaso sigue viniendo como mensaje directo
+            else if (data.message) {
+                mensajeFinal = data.message;
+            }
+        }
+        ponerMensaje(mensajeFinal);
+      }
+  }
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -27,7 +65,7 @@ export default function HomeScreen() {
         <TextInput style={styles.input} placeholder='Repite la contraseña' autoCapitalize='none' value={confirmarClave} onChangeText={ponerConfirmarClave} secureTextEntry={true}></TextInput>
       </View>
       <View style={styles.container2}>
-        <TouchableOpacity style={styles.miBoton1} onPress={() => router.push("/PantallaInicio")}>
+        <TouchableOpacity style={styles.miBoton1} onPress={registrar}>
           <Text style={styles.miTextoBoton}>Entrar</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.miBoton2} onPress={() => router.push("/PantallaHome")}>

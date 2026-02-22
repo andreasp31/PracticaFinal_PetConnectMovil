@@ -1,13 +1,64 @@
 import { Image } from 'expo-image';
 import {StyleSheet, View, TouchableOpacity, Text, TextInput } from 'react-native';
-import { useRouter, Stack} from 'expo-router';
-import React, { useState } from 'react';
+import { useRouter, Stack , useFocusEffect} from 'expo-router';
+import React, { useState , useCallback} from 'react';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function HomeScreen() {
   const [email, ponerEmail] = useState('');
   const [clave, ponerClave] = useState('');
+  const [errorMensaje, ponerMensaje] = useState('');
   //Para cambiar entre pantallas
   const router = useRouter();
+  const login = async()=>{
+      ponerMensaje('');
+      try{
+        const respuesta = await axios.post("http://10.0.2.2:3000/api/login",{
+          email: email,
+          clave: clave
+        });
+        //se guarda el nombre en el local y se coge el nombre de la base de datos
+        const { token, usuario } = respuesta.data;
+        await AsyncStorage.setItem("nombreUsuario",usuario.nombre);
+        await AsyncStorage.setItem("token",token);
+        await AsyncStorage.setItem("roleUsuario", usuario.role);
+        await AsyncStorage.setItem("emailUsuario", usuario.email);
+        if(usuario.role === "admin"){
+         
+        }
+        else{
+          router.push('/PantallaUsuario');
+        }
+      }
+      //El any es para decirle a typescript que se lo que estoy haciendo al llamar error, que sino me da problemas
+      catch(error : any){
+        let mensajeFinal = "Error al iniciar sesión";
+        if (error.response && error.response.data) {
+          const data = error.response.data
+
+          // detectar que el email es incorrecto
+          if (data.detalles) {
+            const primerCampoConError = Object.keys(data.detalles).find(key => key !== '_errors')
+            if (primerCampoConError) {
+              mensajeFinal = data.detalles[primerCampoConError]._errors[0];
+            }
+          } 
+          // Si el error viene por credenciales incorrectas  
+          else if (data.message) {
+            mensajeFinal = data.message
+          }
+        }
+        ponerMensaje(mensajeFinal);
+      }
+    }
+     useFocusEffect(
+        useCallback(() => {
+          ponerEmail('');
+          ponerClave('');
+          ponerMensaje('');
+        }, [])
+     );
   //lo que se va a mostrar en pantalla: uso botones, imágenes y text
   return (
     <View style={styles.container}>
@@ -19,9 +70,10 @@ export default function HomeScreen() {
       <View style={styles.container3}>
         <TextInput style={styles.input} placeholder='Introduce un correo' autoCapitalize='none' value={email} onChangeText={ponerEmail} keyboardType="email-address"></TextInput>
         <TextInput style={styles.input} placeholder='Introduce una contraseña' autoCapitalize='none' value={clave} onChangeText={ponerClave} secureTextEntry={true}></TextInput>
+        {errorMensaje ? <Text style={{color: 'red', marginTop: 10}}>{errorMensaje}</Text> : null}
       </View>
       <View style={styles.container2}>
-        <TouchableOpacity style={styles.miBoton1} onPress={() => router.push("/PantallaUsuario")}>
+        <TouchableOpacity style={styles.miBoton1} onPress={login}>
           <Text style={styles.miTextoBoton}>Entrar</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.miBoton2} onPress={() => router.push("/PantallaHome")}>
