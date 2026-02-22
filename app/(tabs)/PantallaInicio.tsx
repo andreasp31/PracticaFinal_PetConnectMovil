@@ -25,7 +25,7 @@ export default function HomeScreen() {
         await AsyncStorage.setItem("roleUsuario", usuario.role);
         await AsyncStorage.setItem("emailUsuario", usuario.email);
         if(usuario.role === "admin"){
-         
+          router.push('/PantallaAdministrador');
         }
         else{
           router.push('/PantallaUsuario');

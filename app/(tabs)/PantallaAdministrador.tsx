@@ -43,13 +43,11 @@ export default function HomeScreen() {
     setModalVisible(false); 
     setHoraSeleccionada(null); 
   };
-  const abrirModal3 = (item: Actividad)=>{
-    setActividadSeleccionada(item);
+  const abrirModal3 = ()=>{
     setModalVisible(true);
   }
   const cerrarModal3 = () => {
-    setModalVisible(false); 
-    setHoraSeleccionada(null); 
+    setModalVisible(false);  
   };
   const abrirModal2 = ()=>{
     setActividadSeleccionada(null);
@@ -80,7 +78,7 @@ export default function HomeScreen() {
   const cargarActividades = async () => {
     if (!emailUsuario) return;
     try {
-      const respuesta = await axios.get(`http://10.0.2.2:3000/api/mis-actividades/${emailUsuario}`);
+      const respuesta = await axios.get(`http://10.0.2.2:3000/api/actividades`);
       setActividades([...respuesta.data]);
      } 
      catch (error) {
@@ -163,7 +161,7 @@ export default function HomeScreen() {
         <View style={styles.tarjetaInfo}>
           <View style={styles.tarjetaCabecera}>
             <Text style={styles.tarjetaTitulo}>{item.nombre}</Text>
-            <TouchableOpacity onPress={() => abrirModal3(item)}>
+            <TouchableOpacity onPress={() => abrirModal3()}>
               <Image source={require('@/assets/images/Edit.png')} contentFit="cover" style={styles.fotoEditar}></Image>
             </TouchableOpacity>
           </View>
@@ -177,7 +175,7 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.textoCabecera}>
-          <Text style={styles.textosCuenta} onPress={abrirModal4}>{nombre}</Text>
+          <Text style={styles.textosCuenta} onPress={abrirModal4}>Admin</Text>
           <Image source={require('@/assets/images/logoPet.png')} style={styles.foto}></Image>
           <View style={styles.iconos}>
             <Image source={require('@/assets/images/facebook.svg')} style={styles.icono} resizeMode="contain"></Image>
@@ -189,11 +187,11 @@ export default function HomeScreen() {
       </ImageBackground>
       <View style={styles.cajaScroll}>
         <ScrollView horizontal={true} contentContainerStyle={styles.container2}>
-          <TouchableOpacity style={styles.miBoton1} onPress={() => router.push("/PantallaUsuario")}>
-            <Text style={styles.miTextoBoton}>Nuevas Actividades</Text>
-          </TouchableOpacity>
           <TouchableOpacity style={styles.botonMenu}>
-            <Text style={styles.miTextoBoton3}>Mis Actividades</Text>
+            <Text style={styles.miTextoBoton3}>Actividades</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.miBoton1} onPress={() => abrirModal3()}>
+            <Text style={styles.miTextoBoton}>Nueva Actividad</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.miBoton1} onPress={() => abrirModal2()}>
             <Text style={styles.miTextoBoton}>Adoptar</Text>
@@ -210,26 +208,11 @@ export default function HomeScreen() {
               <TouchableOpacity onPress={cerrarModal3}>
                 <Image source={require('@/assets/images/botonCerrar.png')} contentFit="cover" style={styles.fotoCerrar}></Image>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.botonCancelar} onPress={abrirConfirmar}>
-                <Text style={styles.textoBotonCancelar}>Cancelar Reserva</Text>
-              </TouchableOpacity>
             </View>
             <View style={styles.bloqueModal3}>
-              <Text style={styles.tarjetaTitulo}>{actividadSeleccionada?.nombre}</Text>
-              <View style={styles.bloqueFecha2}>
-                <Text>Fecha: {actividadSeleccionada ? formatearFecha(actividadSeleccionada.fechaHora) : ''}</Text>
-                <Text>Hora: {actividadSeleccionada ? cargarHora(actividadSeleccionada) : ''}</Text>
-              </View>
-              <Text style={styles.subtituloModal}>Cambio de hora:</Text>
-              <View style={styles.contenedorHoras}>
-                {horarios.map((hora)=>(
-                  <TouchableOpacity key={hora} style={[ styles.botonHora,horaSeleccionada === hora && styles.botonHoraActivo]} onPress={() => setHoraSeleccionada(hora)}>
-                    <Text style={[styles.textoHora,horaSeleccionada === hora && styles.textoHoraActivo]}>{hora}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              <input></input>
               <TouchableOpacity style={styles.botonMenu2} onPress={actualizarHora}>
-                <Text style={styles.miTextoBoton3}>Actualizar</Text>
+                <Text style={styles.miTextoBoton3}>Guardar</Text>
               </TouchableOpacity>
             </View>
           </View>
