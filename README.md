@@ -1,50 +1,25 @@
-# Welcome to your Expo app 👋
+# Aplicación de Móvil (React Native + Expo): PetConnect
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## Descripción
+Aplicación con panel administrativo para la gestión interna del refugio y panel de usuario para las personas incluídas en este público objetivo. El panel administrativo permite el control sobre las actividades y asistencias.
 
-## Get started
+## Características Principales
+* Gestor de Actividades: Crear, editar y eliminar eventos.
+* Control de Asistencia: Ver personas apuntadas a los eventos y cuales han cancelado fuera de tiempo perdiendo la plaza.
+* Creación de nuevos usuario a través de formulario y cerrar la sesión dentro de la applicación.
+* Interacción de los Usuarios: inscribirse a eventos, editar la hora y la posibilidad de cancelación.
 
-1. Install dependencies
+## Tecnologías
+* Framework: React Native con Expo
+* Comunicación: Api Rest con Axios 
+* Base de Datos: MongoDB (Api/Mongoose)
+* Estilos: CSS
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
+## Instalación
 ```bash
-npm run reset-project
+npm install 
 ```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npx expo start
+```
+## Caso de Uso: Usuario y Administrador
