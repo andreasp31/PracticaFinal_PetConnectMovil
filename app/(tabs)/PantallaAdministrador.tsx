@@ -35,15 +35,19 @@ export default function HomeScreen() {
   const [emailUsuario, setEmailUsuario] = useState<string | null>(null);
   const [modalConfirmar, setModalConfirmar] = useState(false);
   const [actividadCancelar, setActividadCancelar] = useState<Actividad | null>(null);
+  //para poder actualizar o crear una nueva actividad
   const [nombreActividad, setNombreActividad] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [fecha, setFecha] = useState('');
   const [plazas, setPlazas] = useState('');
   const [modoEdicion, setmodoEdicion] = useState(false);
+  //para el calendario 
   const [showPicker, setShowPicker] = useState(false);
   const [fechaObjeto, setFechaObjeto] = useState(new Date());
   const [modalAsistencia, setModalAsistencia] = useState(false);
+  //horas de las actividades, para luego enseñar la asistencia
   const horarios = ["09:00","11:00","13:00","17:00","19:00"];
+  //modales
   const abrirModal = (item: Actividad)=>{
     setActividadSeleccionada(item);
     setModalVisible(true);
@@ -92,6 +96,7 @@ export default function HomeScreen() {
     setModalConfirmar(false);
     setActividadCancelar(null);
   };
+  //enseñar todas las actividades 
   const cargarActividades = async () => {
     if (!emailUsuario) return;
     try {
@@ -102,6 +107,7 @@ export default function HomeScreen() {
       console.error("Error al traer actividades:", error);
     }
   };
+  //Cargar los datos de fondo
   useEffect(() => {
   const recuperarDatos = async () => {
     const nombreGuardado = await AsyncStorage.getItem("nombreUsuario");
@@ -118,50 +124,13 @@ export default function HomeScreen() {
     }
   }, [emailUsuario])
 );
-  
-  const cancelarReserva = async () => {
-    if (!actividadCancelar || !emailUsuario){
-      console.log("Faltan datos:", { actividadCancelar, emailUsuario });
-      return;
-    }
-    const actividadId = actividadCancelar._id;
-    console.log("Intentando cancelar:", { actividadId, emailUsuario });
-    try {
-      setModalConfirmar(false);
-      setModalVisible(false);
-      setActividadSeleccionada(null);
-      setActividadCancelar(null);
-      await axios.delete("http://10.0.2.2:3000/api/actividades/cancelar", {
-        data: { 
-          actividadId: actividadId, 
-          email: emailUsuario 
-        },
-      });
-      await cargarActividades();
-       
-    } catch (error) {
-      console.error("Error al cancelar:", error);
-    }
-  };
-  const actualizarHora = async () => {
-    if (!actividadSeleccionada || !horaSeleccionada || !emailUsuario) return;
-    try {
-      await axios.put("http://10.0.2.2:3000/api/actividades/actualizarHora", {
-        actividadId: actividadSeleccionada._id,
-        email: emailUsuario,
-        nuevaHora: horaSeleccionada
-      });
-      await cargarActividades();
-      cerrarModal();
-    } catch (error) {
-      console.error("Error al actualizar hora:", error);
-    }
-  };
+  //buscar la hora a la que está apuntada una persona en una actividad para la asistencia
   const cargarHora = (actividad: Actividad) => {
     if (!actividad || !actividad.personasApuntadas || !emailUsuario) return "Sin hora";
     const registro = actividad.personasApuntadas.find(p => p.usuarioEmail === emailUsuario);
     return registro ? registro.hora : "No encontrado";
   };
+  //pasar la hora a bonita
   const formatearFecha = (fechaString: string) => {
     const fecha = new Date(fechaString);
     return fecha.toLocaleDateString('es-ES', {
@@ -177,6 +146,7 @@ export default function HomeScreen() {
   const cerrarAsistencia = () => {
     setModalAsistencia(false);
   };
+  //Guardar datos según si fue un cambio o una creación dependiento del modal abierto
   const guardarActividad = async () => {
   try {
     const datos = {
@@ -200,6 +170,7 @@ export default function HomeScreen() {
     console.error("Error al guardar actividad:", error);
   }
 };
+//función que elimina los datos de la actividad seleccionada
   const eliminarActividad = async () => {
     if (!actividadSeleccionada) return;
     try {
@@ -211,6 +182,7 @@ export default function HomeScreen() {
       console.error("Error al eliminar:", error);
     }
   };
+  //sacar las personas que están apuntadas en una de las horas de una de las actividades para sacar un número total
   const obtenerPersonasPorHora = (hora: string) => {
     if (!actividadSeleccionada || !actividadSeleccionada.personasApuntadas) return [];
     return actividadSeleccionada.personasApuntadas.filter(p => p.hora === hora);

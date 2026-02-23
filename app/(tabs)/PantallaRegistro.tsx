@@ -33,7 +33,7 @@ export default function HomeScreen() {
 
         if (error.response && error.response.data) {
             const data = error.response.data;
-            // 1. Si usamos el nuevo formato .format() del backend:
+            // Si usamos el nuevo formato .format() del backend:
             if (data.detalles) {
                 // Buscamos el primer error que aparezca en el objeto formateado
                 // Zod .format() devuelve algo como { nombre: { _errors: [] } }
@@ -42,7 +42,7 @@ export default function HomeScreen() {
                     mensajeFinal = data.detalles[primerCampoConError]._errors[0];
                 }
             } 
-            // 2. Por si acaso sigue viniendo como mensaje directo
+            // Por si acaso sigue viniendo como mensaje directo
             else if (data.message) {
                 mensajeFinal = data.message;
             }

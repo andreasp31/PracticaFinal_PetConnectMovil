@@ -34,7 +34,9 @@ export default function HomeScreen() {
   const [emailUsuario, setEmailUsuario] = useState<string | null>(null);
   const [modalConfirmar, setModalConfirmar] = useState(false);
   const [actividadCancelar, setActividadCancelar] = useState<Actividad | null>(null);
+  //horas de las actividades
   const horarios = ["09:00","11:00","13:00","17:00","19:00"];
+  //modales
   const abrirModal = (item: Actividad)=>{
     setActividadSeleccionada(item);
     setModalVisible(true);
@@ -77,6 +79,7 @@ export default function HomeScreen() {
     setModalConfirmar(false);
     setActividadCancelar(null);
   };
+  //enseñar las actividades a las que se ha inscrito el usuario
   const cargarActividades = async () => {
     if (!emailUsuario) return;
     try {
@@ -87,6 +90,7 @@ export default function HomeScreen() {
       console.error("Error al traer actividades:", error);
     }
   };
+  //recuperar datos 
   useEffect(() => {
   const recuperarDatos = async () => {
     const nombreGuardado = await AsyncStorage.getItem("nombreUsuario");
@@ -96,6 +100,7 @@ export default function HomeScreen() {
   };
   recuperarDatos();
   }, []);
+  //que se recargue si se entra a esta página
   useFocusEffect(
   useCallback(() => {
     if (emailUsuario) {
@@ -103,7 +108,7 @@ export default function HomeScreen() {
     }
   }, [emailUsuario])
 );
-  
+  //función que tras seleccionar una actividad la borra con el id de la actividad y el correo de la persona apuntada la borra de la lista de personas apuntadas
   const cancelarReserva = async () => {
     if (!actividadCancelar || !emailUsuario){
       console.log("Faltan datos:", { actividadCancelar, emailUsuario });
@@ -128,6 +133,7 @@ export default function HomeScreen() {
       console.error("Error al cancelar:", error);
     }
   };
+  //cambiar la hora en la modificación de la reversa
   const actualizarHora = async () => {
     if (!actividadSeleccionada || !horaSeleccionada || !emailUsuario) return;
     try {
@@ -142,11 +148,13 @@ export default function HomeScreen() {
       console.error("Error al actualizar hora:", error);
     }
   };
+  //recoger el dato de la hora para enseñarlo
   const cargarHora = (actividad: Actividad) => {
     if (!actividad || !actividad.personasApuntadas || !emailUsuario) return "Sin hora";
     const registro = actividad.personasApuntadas.find(p => p.usuarioEmail === emailUsuario);
     return registro ? registro.hora : "No encontrado";
   };
+  //pasar la fecha a bonito
   const formatearFecha = (fechaString: string) => {
     const fecha = new Date(fechaString);
     return fecha.toLocaleDateString('es-ES', {

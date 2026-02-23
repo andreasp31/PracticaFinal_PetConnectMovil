@@ -31,7 +31,9 @@ export default function HomeScreen() {
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [emailUsuario, setEmailUsuario] = useState<string | null>(null);
   const [nombre, setNombre] = useState('Usuario');
+  //Horas disponibles para cada actividad
   const horarios = ["09:00","11:00","13:00","17:00","19:00"];
+  //modales
   const abrirModal = (item: Actividad)=>{
     const apuntado = esPersonaApuntada(item);
     const perdido = esPlazaPerdida(item);
@@ -60,6 +62,7 @@ export default function HomeScreen() {
   const cerrarModal4 = () => {
     setModalVisible4(false); 
   };
+  //obtener las todas actividades creadas por el admin 
   const cargarActividades = async () => {
       try {
         const respuesta = await axios.get("http://10.0.2.2:3000/api/actividades");
@@ -68,17 +71,16 @@ export default function HomeScreen() {
         console.error("Error al traer actividades:", error);
       }
   };
+  //para que lo haga al mismo tiempo en segundo plano
   useEffect(() => {
   const inicializar = async () => {
-    // 1. Recuperamos datos primero
+    // Recuperamos datos primero
     const nombreGuardado = await AsyncStorage.getItem("nombreUsuario");
     const emailGuardado = await AsyncStorage.getItem("emailUsuario");
-    
+    //para poner el nombre al encabezado
     if (nombreGuardado) setNombre(nombreGuardado);
-    
     if (emailGuardado) {
       setEmailUsuario(emailGuardado); 
-      
       try {
         const respuesta = await axios.get("http://10.0.2.2:3000/api/actividades");
         setActividades(respuesta.data);
@@ -99,12 +101,14 @@ export default function HomeScreen() {
     const apuntado = esPersonaApuntada(item);
     const perdido = esPlazaPerdida(item);
     const sinPlazas = item.plazas <= 0;
+    //estados
     const deshabilitado = apuntado || perdido || sinPlazas;
     return(
       <View style={styles.tarjeta}>
         <View style={styles.tarjetaInfo}>
           <View style={styles.tarjetaCabecera}>
             <Text style={styles.tarjetaTitulo}>{item.nombre}</Text>
+            /*Estados de los botones */
             <TouchableOpacity style={[styles.botonTarjeta, deshabilitado && styles.botonDesactivado]} onPress={() => abrirModal(item)}>
               <Text style={[styles.miTextoBoton2, deshabilitado && styles.textoBotonDesactivado]}>{apuntado ? "Inscrito" : perdido ? "Plaza Perdida" : sinPlazas ? "Agotado" : "Ver más"}</Text>
             </TouchableOpacity>
@@ -115,7 +119,7 @@ export default function HomeScreen() {
       </View>
     )
   }
-    
+  //función para apuntarse a una actividad seleccionando una franja horaria
   const inscripcion = async()=>{
       if (!actividadSeleccionada || !horaSeleccionada) return;
       try {
@@ -127,6 +131,7 @@ export default function HomeScreen() {
           fechaHora: horaSeleccionada
         };
         await axios.post("http://10.0.2.2:3000/api/actividades/inscribir", datos);
+        //aqui vuelve a enseñar la lista de activides que sino no se carga automaticamente
         const respuesta = await axios.get("http://10.0.2.2:3000/api/actividades");
         setActividades([...respuesta.data]);
         await cargarActividades();
@@ -137,17 +142,19 @@ export default function HomeScreen() {
         console.log("No se pudo completar la inscripción");
       }
   }
+  //buscar si el estado es inscrito para luego los estilos de los botones
   const esPersonaApuntada = (actividad: Actividad) => {
     return actividad.personasApuntadas?.some(p => 
       p.usuarioEmail === emailUsuario && p.estado === 'inscrito'
     );
   };
-
+  //buscar si el estado es cancelado tarde para luego los estilos de los botones que sea distinto
   const esPlazaPerdida = (actividad: Actividad) => {
     return actividad.personasApuntadas?.some(p => 
       p.usuarioEmail === emailUsuario && p.estado === 'cancelado_tarde'
     );
   };
+  //formatear la decha para que se enseñe bonita
   const formatearFecha = (fechaString: string) => {
     const fecha = new Date(fechaString);
     return fecha.toLocaleDateString('es-ES', {
