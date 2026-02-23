@@ -23,3 +23,4 @@ npm install
 npx expo start
 ```
 ## Caso de Uso: Usuario y Administrador
+![casoUSo](./casoUso1.png)
